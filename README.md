@@ -3,7 +3,7 @@
 > A production-grade **Retrieval-Augmented Generation (RAG)** system for evidence-based medical question answering, built on the MIMIC-IV clinical dataset.
 
 [![Python](https://img.shields.io/badge/Python-3.10-blue?logo=python)](https://python.org)
-[![Streamlit](https://img.shields.io/badge/Streamlit-App-FF4B4B?logo=streamlit)](https://streamlit.io)
+[![Gradio](https://img.shields.io/badge/Gradio-Interface-F97316?logo=gradio)](https://gradio.app)
 [![LangChain](https://img.shields.io/badge/LangChain-RAG-1C3C3C?logo=chainlink)](https://langchain.com)
 [![FAISS](https://img.shields.io/badge/FAISS-Vector_Store-0866FF)](https://github.com/facebookresearch/faiss)
 [![Groq](https://img.shields.io/badge/Groq-Llama_3.3_70B-F55036)](https://console.groq.com)
@@ -21,7 +21,7 @@
 - [Tech Stack](#-tech-stack)
 - [Project Structure](#-project-structure)
 - [Installation & Setup](#-installation--setup)
-- [Deployment on Streamlit Cloud](#-deployment-on-streamlit-cloud)
+- [Sharing the Gradio App](#-sharing-the-gradio-app)
 - [How It Works](#-how-it-works)
 - [Sample Results](#-sample-results)
 - [Limitations](#-limitations)
@@ -39,7 +39,9 @@ Unlike a standard chatbot, every answer is derived exclusively from retrieved cl
 
 ## 🚀 Live Demo
 
-> Deploy your own instance in minutes — see [Deployment](#-deployment-on-streamlit-cloud) below.
+🟢 **Live App:** [https://485a585f59f31a9ffd.gradio.live/](https://485a585f59f31a9ffd.gradio.live/)
+
+> Note: Gradio share links expire after 72 hours. To run permanently, deploy on Hugging Face Spaces or run locally with `share=True`.
 
 ---
 
@@ -51,7 +53,7 @@ Unlike a standard chatbot, every answer is derived exclusively from retrieved cl
 | 🧠 AI Generation | Llama 3.3 70B (Groq free tier) for context-grounded answers |
 | 📚 Rich Knowledge Base | 48 medical conditions × knowledge graphs + 1,000+ patient cases |
 | 📄 Source Citation | Every answer links back to retrieved clinical evidence chunks |
-| 🌐 Web Interface | Polished Streamlit app with three tabs: Q&A, Browse, About |
+| 🌐 Web Interface | Gradio app with chat interface, source display, and shareable public link |
 | ⚡ Fast Inference | Groq delivers ~500 tokens/second — near-instant responses |
 | 🔒 Hallucination Guard | Prompt-level constraint: model answers *only* from retrieved context |
 
@@ -64,7 +66,7 @@ User Question
       │
       ▼
 ┌─────────────────┐
-│  Streamlit UI   │  ← Web interface (3 tabs)
+│   Gradio UI     │  ← Chat interface with public share link
 └────────┬────────┘
          │
          ▼
@@ -143,7 +145,7 @@ This project uses the **MIMIC-IV Extended Direct (v1.0)** dataset.
 | Component | Technology |
 |---|---|
 | Language | Python 3.10 |
-| Web Framework | Streamlit |
+| Web Framework | Gradio |
 | RAG Orchestration | LangChain + LangChain-HuggingFace |
 | Embedding Model | `sentence-transformers/all-MiniLM-L6-v2` |
 | Vector Store | FAISS (Facebook AI Similarity Search) |
@@ -157,10 +159,8 @@ This project uses the **MIMIC-IV Extended Direct (v1.0)** dataset.
 ```
 medical-assistant/
 │
-├── app.py                          # Main Streamlit application
+├── RAG_v2_clean.ipynb              # Main Jupyter Notebook (Colab)
 ├── requirements.txt                # Python dependencies
-├── packages.txt                    # System packages (unrar-free)
-├── setup.sh                        # Optional setup script
 ├── README.md                       # This file
 │
 └── mimic-iv-ext-direct-1.0.rar    # Dataset (place here before running)
@@ -189,11 +189,55 @@ mimic-iv-ext-direct-1.0/
 
 ### Prerequisites
 
-- Python 3.10+
-- A free [Groq API key](https://console.groq.com) (takes 2 minutes to get)
+- A Google account (for Google Colab)
+- A free [Groq API key](https://console.groq.com) — signup takes 2 minutes
 - The MIMIC-IV dataset RAR file
 
-### Local Setup
+### Option 1: Run on Google Colab (Recommended)
+
+This is the primary way to run the project — no local setup required.
+
+**1. Open the notebook in Colab**
+
+Upload `RAG_v2_clean.ipynb` to [Google Colab](https://colab.research.google.com) or open it directly from GitHub.
+
+**2. Upload the dataset**
+
+In the Colab file panel, upload `mimic-iv-ext-direct-1.0.rar` to `/content/`.
+
+**3. Add your Groq API key**
+
+In the notebook, find Cell 6 and replace the placeholder:
+
+```python
+GROQ_API_KEY = "gsk_your_actual_key_here"
+```
+
+Or use Colab Secrets (recommended):
+- Click the 🔑 **Secrets** tab in the left panel
+- Add a secret named `GROQ_API_KEY` with your key
+
+**4. Run all cells**
+
+Click **Runtime → Run all**. The notebook will:
+1. Install `unrar` and extract the dataset (~30 seconds)
+2. Install all Python dependencies (~1 minute)
+3. Build the FAISS index (~2–3 minutes on GPU, ~5 minutes on CPU)
+4. Launch the Gradio interface with a public share link
+
+**5. Access the app**
+
+Once Cell 8 (Gradio interface) runs, you'll see a public URL like:
+
+```
+Running on public URL: https://xxxxxxxxxxxxxxxx.gradio.live
+```
+
+Share this link with anyone — it stays live as long as your Colab session is running.
+
+---
+
+### Option 2: Run Locally
 
 **1. Clone the repository**
 
@@ -215,73 +259,41 @@ brew install unar
 **3. Install Python dependencies**
 
 ```bash
-pip install -r requirements.txt
+pip install gradio langchain langchain-community langchain-huggingface \
+            sentence-transformers faiss-cpu groq
 ```
 
 **4. Place the dataset**
 
-Copy `mimic-iv-ext-direct-1.0.rar` into the project root directory.
+Copy `mimic-iv-ext-direct-1.0.rar` into the project root.
 
 **5. Set your Groq API key**
-
-Create a `.streamlit/secrets.toml` file:
-
-```toml
-GROQ_API_KEY = "gsk_your_actual_key_here"
-```
-
-Or set as an environment variable:
 
 ```bash
 export GROQ_API_KEY="gsk_your_actual_key_here"
 ```
 
-**6. Run the app**
+**6. Run the notebook or launch Gradio directly**
 
 ```bash
-streamlit run app.py
+jupyter notebook RAG_v2_clean.ipynb
 ```
-
-The app will open at `http://localhost:8501`. On first run, it will extract the dataset and build the FAISS index — this takes 2–5 minutes. Subsequent runs load the cached index instantly.
 
 ---
 
-## ☁️ Deployment on Streamlit Cloud
+## 🌐 Sharing the Gradio App
 
-**1. Push all files to GitHub** (including `packages.txt` — this is critical):
+Gradio automatically creates a shareable public link when `share=True` is set:
 
-```
-app.py
-requirements.txt
-packages.txt          ← must contain "unrar-free"
-setup.sh
-mimic-iv-ext-direct-1.0.rar
-README.md
+```python
+demo.launch(share=True)
 ```
 
-**2. Connect to Streamlit Cloud**
-
-- Go to [share.streamlit.io](https://share.streamlit.io)
-- Click **New app** → select your GitHub repo
-- Set **Main file path** to `app.py`
-
-**3. Add your API key as a Secret**
-
-- In the app settings, go to **Settings → Secrets**
-- Add:
-
-```toml
-GROQ_API_KEY = "gsk_your_actual_key_here"
-```
-
-**4. Deploy**
-
-Click **Deploy**. Streamlit Cloud will:
-1. Install `unrar-free` from `packages.txt` (OS-level)
-2. Install Python packages from `requirements.txt`
-3. Launch the app
-
-> ⚠️ **Important:** `packages.txt` must say `unrar-free` (not `unrar`) — the standard `unrar` package is not available in Debian's default repositories used by Streamlit Cloud.
+| Method | Link Duration | Notes |
+|---|---|---|
+| Gradio share link | 72 hours | Auto-generated, no account needed |
+| Hugging Face Spaces | Permanent | Free hosting, requires HF account |
+| Google Colab | Session lifetime | Easiest for demos |
 
 ---
 
@@ -290,7 +302,7 @@ Click **Deploy**. Streamlit Cloud will:
 ### Query Processing (Online)
 
 ```
-1. User types question in Streamlit UI
+1. User types question in Gradio chat interface
 2. Question → all-MiniLM-L6-v2 → 384-dim query vector
 3. FAISS index searched → top-5 most similar chunks returned
 4. Chunks concatenated → injected into prompt template
@@ -372,5 +384,5 @@ This project is submitted for academic evaluation. The MIMIC-IV dataset is subje
 ---
 
 <p align="center">
-Built with ❤️ using LangChain · FAISS · Groq · Streamlit · MIMIC-IV
+Built with ❤️ using LangChain · FAISS · Groq · Gradio · MIMIC-IV
 </p>
